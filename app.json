@@ -2,6 +2,7 @@
   "expo": {
     "name": "WattSplit",
     "slug": "wattsplit",
+    "owner": "vicky19",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -27,6 +28,11 @@
     },
     "plugins": [
       "expo-sharing"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "afa00913-f7d3-4bb0-8ab1-10058165cd56"
+      }
+    }
   }
 }
