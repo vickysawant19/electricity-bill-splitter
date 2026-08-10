@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  StatusBar,
   Alert,
 } from 'react-native';
+import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useDbContext } from '../context/DbContext';
@@ -59,7 +59,6 @@ export const SubMetersScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle={themeMode === 'dark' ? 'light-content' : 'dark-content'} />
       <LinearGradient colors={themeColors.backgroundGradient} style={styles.gradientContainer}>
         {/* Global Header */}
         <GlobalHeader />
@@ -79,7 +78,7 @@ export const SubMetersScreen: React.FC = () => {
             onPress={handleOpenNewModal}
             activeOpacity={0.8}
           >
-            <Ionicons name="add" size={20} color="#FFFFFF" />
+            <Ionicons name="add" size={18} color="#FFFFFF" />
             <Text style={styles.headerAddBtnText}>Add Tenant</Text>
           </TouchableOpacity>
         </View>
@@ -99,51 +98,56 @@ export const SubMetersScreen: React.FC = () => {
             data={activeTenants}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
-              <GlassCard style={styles.tenantCard}>
-                <View style={styles.cardLeft}>
-                  <View style={[styles.avatar, { backgroundColor: themeColors.accentPrimary }]}>
-                    <Text style={styles.avatarText}>
-                      {item.name.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.tenantInfo}>
-                    <Text style={[styles.nameText, { color: themeColors.textPrimary }]}>
-                      {item.name}
-                    </Text>
-                    <View style={styles.meterRow}>
-                      <Ionicons name="speedometer-outline" size={13} color={themeColors.textSecondary} />
-                      <Text style={[styles.meterText, { color: themeColors.textSecondary }]}>
-                        {`Meter: ${item.meterNumber}`}
+            renderItem={({ item, index }) => (
+              <Animated.View
+                entering={FadeInDown.delay(index * 70).duration(300)}
+                layout={Layout.springify()}
+              >
+                <GlassCard style={styles.tenantCard}>
+                  <View style={styles.cardLeft}>
+                    <View style={[styles.avatar, { backgroundColor: themeColors.accentPrimary }]}>
+                      <Text style={styles.avatarText}>
+                        {item.name.charAt(0).toUpperCase()}
                       </Text>
                     </View>
+                    <View style={styles.tenantInfo}>
+                      <Text style={[styles.nameText, { color: themeColors.textPrimary }]}>
+                        {item.name}
+                      </Text>
+                      <View style={styles.meterRow}>
+                        <Ionicons name="speedometer-outline" size={13} color={themeColors.textSecondary} />
+                        <Text style={[styles.meterText, { color: themeColors.textSecondary }]}>
+                          {`Meter: ${item.meterNumber}`}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                </View>
 
-                {/* Actions */}
-                <View style={styles.actionButtonsRow}>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: themeColors.inputBackground }]}
-                    onPress={() => handleEdit(item)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="pencil" size={16} color={themeColors.accentPrimary} />
-                  </TouchableOpacity>
+                  {/* Actions */}
+                  <View style={styles.actionButtonsRow}>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: themeColors.inputBackground }]}
+                      onPress={() => handleEdit(item)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="pencil" size={16} color={themeColors.accentPrimary} />
+                    </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: themeColors.accentDanger + '15' }]}
-                    onPress={() => handleDelete(item)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="trash-outline" size={16} color={themeColors.accentDanger} />
-                  </TouchableOpacity>
-                </View>
-              </GlassCard>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: themeColors.accentDanger + '15' }]}
+                      onPress={() => handleDelete(item)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={themeColors.accentDanger} />
+                    </TouchableOpacity>
+                  </View>
+                </GlassCard>
+              </Animated.View>
             )}
           />
         )}
 
-        {/* Floating Action Button (FAB) */}
+        {/* Floating Action Button (FAB) - Positioned safely above bottom tab bar */}
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: themeColors.accentPrimary }]}
           onPress={handleOpenNewModal}
@@ -200,7 +204,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 90,
+    paddingBottom: 120, // Positioned safely above bottom navigation bar
   },
   tenantCard: {
     flexDirection: 'row',
@@ -273,7 +277,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 85, // Positioned safely above bottom tab bar
     right: 20,
     width: 56,
     height: 56,
@@ -282,8 +286,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.45,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 10,
+    zIndex: 99,
   },
 });

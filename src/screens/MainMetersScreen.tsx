@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  StatusBar,
   Alert,
 } from 'react-native';
+import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useDbContext } from '../context/DbContext';
@@ -65,7 +65,6 @@ export const MainMetersScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle={themeMode === 'dark' ? 'light-content' : 'dark-content'} />
       <LinearGradient colors={themeColors.backgroundGradient} style={styles.gradientContainer}>
         {/* Global Header */}
         <GlobalHeader />
@@ -73,10 +72,10 @@ export const MainMetersScreen: React.FC = () => {
         <View style={styles.headerTitleRow}>
           <View>
             <Text style={[styles.title, { color: themeColors.textPrimary }]}>
-              Main Meter Accounts
+              Main Meters
             </Text>
             <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
-              Manage buildings, complex accounts, and properties
+              Tap any account card to switch active account
             </Text>
           </View>
 
@@ -85,7 +84,7 @@ export const MainMetersScreen: React.FC = () => {
             onPress={handleOpenNewModal}
             activeOpacity={0.8}
           >
-            <Ionicons name="add" size={20} color="#FFFFFF" />
+            <Ionicons name="add" size={18} color="#FFFFFF" />
             <Text style={styles.headerAddBtnText}>Add Account</Text>
           </TouchableOpacity>
         </View>
@@ -94,67 +93,92 @@ export const MainMetersScreen: React.FC = () => {
           data={mainMeters}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const isSelected = item.id === selectedMainMeterId;
             const tenantCount = users.filter((u) => u.mainMeterId === item.id).length;
 
             return (
-              <GlassCard
-                style={[
-                  styles.meterCard,
-                  isSelected && { borderColor: themeColors.accentPrimary, borderWidth: 2 },
-                ]}
+              <Animated.View
+                entering={FadeInDown.delay(index * 80).duration(350)}
+                layout={Layout.springify()}
               >
-                <TouchableOpacity
-                  style={styles.meterCardMain}
-                  onPress={() => setSelectedMainMeterId(item.id)}
-                  activeOpacity={0.8}
+                <GlassCard
+                  style={[
+                    styles.meterCard,
+                    isSelected && { borderColor: themeColors.accentPrimary, borderWidth: 2 },
+                  ]}
                 >
-                  <View style={[styles.iconWrapper, { backgroundColor: themeColors.accentPrimary + '20' }]}>
-                    <Ionicons name="business" size={22} color={themeColors.accentPrimary} />
-                  </View>
-
-                  <View style={styles.meterInfo}>
-                    <View style={styles.nameRow}>
-                      <Text style={[styles.meterNameText, { color: themeColors.textPrimary }]}>
-                        {item.name}
-                      </Text>
-                      {isSelected && (
-                        <View style={[styles.activeTag, { backgroundColor: themeColors.accentPrimary }]}>
-                          <Text style={styles.activeTagText}>ACTIVE</Text>
-                        </View>
-                      )}
+                  <TouchableOpacity
+                    style={styles.meterCardMain}
+                    onPress={() => setSelectedMainMeterId(item.id)}
+                    activeOpacity={0.8}
+                  >
+                    <View
+                      style={[
+                        styles.iconWrapper,
+                        {
+                          backgroundColor: isSelected
+                            ? themeColors.accentPrimary
+                            : themeColors.accentPrimary + '20',
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name="business"
+                        size={22}
+                        color={isSelected ? '#FFFFFF' : themeColors.accentPrimary}
+                      />
                     </View>
-                    <Text style={[styles.tenantCountText, { color: themeColors.textSecondary }]}>
-                      {`${tenantCount} Sub-Meter Tenants`}
-                    </Text>
+
+                    <View style={styles.meterInfo}>
+                      <View style={styles.nameRow}>
+                        <Text style={[styles.meterNameText, { color: themeColors.textPrimary }]}>
+                          {item.name}
+                        </Text>
+                        {isSelected ? (
+                          <View style={[styles.activeTag, { backgroundColor: themeColors.accentPrimary }]}>
+                            <Ionicons name="checkmark-sharp" size={10} color="#FFFFFF" />
+                            <Text style={styles.activeTagText}>ACTIVE</Text>
+                          </View>
+                        ) : (
+                          <View style={[styles.selectTag, { backgroundColor: themeColors.inputBackground }]}>
+                            <Text style={[styles.selectTagText, { color: themeColors.textSecondary }]}>
+                              Tap to select
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={[styles.tenantCountText, { color: themeColors.textSecondary }]}>
+                        {`${tenantCount} Sub-Meter Tenants`}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Actions */}
+                  <View style={styles.actionButtonsRow}>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: themeColors.inputBackground }]}
+                      onPress={() => handleEdit(item)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="pencil" size={16} color={themeColors.accentPrimary} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: themeColors.accentDanger + '15' }]}
+                      onPress={() => handleDelete(item)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={themeColors.accentDanger} />
+                    </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
-
-                {/* Actions */}
-                <View style={styles.actionButtonsRow}>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: themeColors.inputBackground }]}
-                    onPress={() => handleEdit(item)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="pencil" size={16} color={themeColors.accentPrimary} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: themeColors.accentDanger + '15' }]}
-                    onPress={() => handleDelete(item)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="trash-outline" size={16} color={themeColors.accentDanger} />
-                  </TouchableOpacity>
-                </View>
-              </GlassCard>
+                </GlassCard>
+              </Animated.View>
             );
           }}
         />
 
-        {/* FAB */}
+        {/* Floating Action Button (FAB) - Elevated above bottom tab bar */}
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: themeColors.accentPrimary }]}
           onPress={handleOpenNewModal}
@@ -211,7 +235,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 90,
+    paddingBottom: 120, // Avoid bottom tab bar overlap
   },
   meterCard: {
     flexDirection: 'row',
@@ -238,21 +262,34 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
   },
   meterNameText: {
     fontSize: 16,
     fontWeight: '700',
   },
   activeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
-    marginLeft: 8,
   },
   activeTagText: {
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '900',
+    marginLeft: 3,
+  },
+  selectTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  selectTagText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   tenantCountText: {
     fontSize: 13,
@@ -272,7 +309,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 85, // Positioned safely above bottom navigation bar!
     right: 20,
     width: 56,
     height: 56,
@@ -281,8 +318,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.45,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 10,
+    zIndex: 99,
   },
 });

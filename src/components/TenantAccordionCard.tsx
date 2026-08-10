@@ -20,6 +20,7 @@ import { useDbContext } from '../context/DbContext';
 import { Colors } from '../theme/colors';
 import { GlassCard } from './GlassCard';
 import { formatCurrency, formatUnits, parseNumericInput } from '../utils/calculations';
+import { generateTenantReceiptText, shareTextReport } from '../utils/reportGenerator';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -28,15 +29,22 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 interface TenantAccordionCardProps {
   item: TenantBillDetails;
   month: string;
+  costPerUnit: number;
 }
 
-export const TenantAccordionCard: React.FC<TenantAccordionCardProps> = ({ item, month }) => {
+export const TenantAccordionCard: React.FC<TenantAccordionCardProps> = ({
+  item,
+  month,
+  costPerUnit,
+}) => {
   const { tenant, previousReadingUsed, currentReadingUsed, isAutoCarriedForwardPrev, unitsConsumed, calculatedBillAmount } = item;
-  const { saveReadingField, themeMode } = useDbContext();
+  const { saveReadingField, mainMeters, selectedMainMeterId, themeMode } = useDbContext();
 
   const [expanded, setExpanded] = useState(false);
   const [prevText, setPrevText] = useState(previousReadingUsed ? previousReadingUsed.toString() : '');
   const [currText, setCurrText] = useState(currentReadingUsed ? currentReadingUsed.toString() : '');
+
+  const activeMeter = mainMeters.find((m) => m.id === selectedMainMeterId);
 
   // Keep local input state in sync if external data changes (e.g. month change)
   React.useEffect(() => {
@@ -68,6 +76,11 @@ export const TenantAccordionCard: React.FC<TenantAccordionCardProps> = ({ item, 
     setCurrText(val);
     const num = parseNumericInput(val);
     saveReadingField(tenant.id, month, 'currentReading', num);
+  };
+
+  const handleShareReceipt = () => {
+    const text = generateTenantReceiptText(activeMeter, month, item, costPerUnit);
+    shareTextReport(`Receipt - ${tenant.name}`, text);
   };
 
   // Generate distinct color badge based on tenant initial
@@ -173,15 +186,26 @@ export const TenantAccordionCard: React.FC<TenantAccordionCardProps> = ({ item, 
             />
           </View>
 
-          {/* Calculation Formula Banner */}
-          <View style={[styles.formulaBanner, { backgroundColor: themeColors.cardBackground }]}>
-            <Ionicons name="calculator-outline" size={14} color={themeColors.textSecondary} />
-            <Text style={[styles.formulaText, { color: themeColors.textSecondary }]}>
-              {`Units: ${currentReadingUsed} - ${previousReadingUsed} = `}
-              <Text style={{ fontWeight: '700', color: themeColors.accentPrimary }}>
-                {unitsConsumed} Units
+          {/* Calculation Formula Banner & Individual Share Action */}
+          <View style={styles.expandedFooterRow}>
+            <View style={[styles.formulaBanner, { backgroundColor: themeColors.cardBackground }]}>
+              <Ionicons name="calculator-outline" size={14} color={themeColors.textSecondary} />
+              <Text style={[styles.formulaText, { color: themeColors.textSecondary }]}>
+                {`${currentReadingUsed} - ${previousReadingUsed} = `}
+                <Text style={{ fontWeight: '700', color: themeColors.accentPrimary }}>
+                  {unitsConsumed} U
+                </Text>
               </Text>
-            </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.shareReceiptBtn, { backgroundColor: themeColors.accentSuccess }]}
+              onPress={handleShareReceipt}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="share-social-outline" size={14} color="#FFFFFF" />
+              <Text style={styles.shareReceiptBtnText}>Receipt</Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -288,15 +312,35 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  expandedFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    gap: 8,
+  },
   formulaBanner: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
     borderRadius: 10,
-    marginTop: 4,
   },
   formulaText: {
-    fontSize: 13,
+    fontSize: 12,
     marginLeft: 6,
+  },
+  shareReceiptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  shareReceiptBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 4,
   },
 });
